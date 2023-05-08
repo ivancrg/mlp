@@ -1,0 +1,17 @@
+sklearn.inspection.partial_dependence
+
+method{‘auto’, ‘recursion’, ‘brute’}, default=’auto’
+The method used to calculate the averaged predictions:
+
+'recursion' is only supported for some tree-based estimators (namely GradientBoostingClassifier, GradientBoostingRegressor, HistGradientBoostingClassifier, HistGradientBoostingRegressor, DecisionTreeRegressor, RandomForestRegressor, ) when kind='average'. This is more efficient in terms of speed. With this method, the target response of a classifier is always the decision function, not the predicted probabilities. Since the 'recursion' method implicitly computes the average of the Individual Conditional Expectation (ICE) by design, it is not compatible with ICE and thus kind must be 'average'.
+
+'brute' is supported for any estimator, but is more computationally intensive.
+
+'auto': the 'recursion' is used for estimators that support it, and 'brute' is used otherwise.
+Brute dolazi isto kao i kad se rucno racuna, recursion daje drukcije rezultate
+
+
+
+https://github.com/SeldonIO/alibi
+
+https://github.com/DanaJomar/PyALE
