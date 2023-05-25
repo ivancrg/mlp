@@ -1,18 +1,17 @@
 import pandas as pd
 import numpy as np
 import mmd
+import witness
 import joblib
 import time
 
 data = pd.read_csv('encoded.csv')
 
-# data = data.loc[0:199]
+data = data.loc[0:299]
 data = data.to_numpy()
 
 def evaluate_as_prototype(args):
     Xi, pi, idx, gamma = args
-    #Xi = X.copy()
-    #pi = p.copy()
 
     # Making the removed datapoint a prototype
     pi = np.append(pi, Xi[idx])
@@ -27,6 +26,7 @@ def evaluate_as_prototype(args):
 
 def select_prototype(datapoints):
     return joblib.Parallel(n_jobs=12)(joblib.delayed(evaluate_as_prototype)(datapoint) for datapoint in datapoints)
+
 
 # Adds a prototype to list prototypes
 # using the datapoints from list X
@@ -43,17 +43,13 @@ def add_prototype(X, prototypes, gamma):
     
     # Best prototype index (lowers mmd most)
     bpi = int(mmds[np.argmin(mmds[:, 0]), 1])
-    # for mmd, idx in mmds:
-    #     # Checking if new mmd is lower
-    #     if mmd < min_mmd:
-    #         min_mmd = mmd
-    #         bpi = idx
     
     # Making bpith datapoint a prototype in source lists
     prototypes = np.vstack((prototypes, X[bpi]))
     X = np.delete(X, bpi, 0)
     
     return X, prototypes
+
 
 # Finds m prototypes from dataset X
 # Hyperparameters m and gamma
@@ -66,9 +62,25 @@ def find_prototypes(X, m=10, gamma=0.1):
     for _ in range(m):
         X, cp = add_prototype(X, cp, gamma)
     
-    return cp
+    return X, cp
+
+
+# Finds m criticisms from dataset X with given prototypes
+# Hyperparameters m and gamma
+
+def find_criticisms_par(X, prototypes, m=10, gamma=0.1):
+    # List of witness values
+    wv = joblib.Parallel(n_jobs=12)(joblib.delayed(witness.witness)([np.delete(X, idx, axis=0), prototypes, x, idx, gamma]) for idx, x in enumerate(X))
+    
+    return sorted(wv, key=lambda x: -abs(x[0]))[0:m]
+
 
 t = time.time()
-prototypes = find_prototypes(data)
+X, prototypes = find_prototypes(data)
 print(prototypes)
+print(time.time() - t)
+
+t = time.time()
+criticisms = find_criticisms_par(X, prototypes)
+print(criticisms)
 print(time.time() - t)
