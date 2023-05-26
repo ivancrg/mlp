@@ -4,10 +4,13 @@ import mmd
 import witness
 import joblib
 import time
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn.manifold import TSNE
 
 data = pd.read_csv('encoded.csv')
 
-data = data.loc[0:299]
+#data = data.loc[0:49]
 data = data.to_numpy()
 
 def evaluate_as_prototype(args):
@@ -68,11 +71,11 @@ def find_prototypes(X, m=10, gamma=0.1):
 # Finds m criticisms from dataset X with given prototypes
 # Hyperparameters m and gamma
 
-def find_criticisms_par(X, prototypes, m=10, gamma=0.1):
+def find_criticisms_par(X, prototypes, m=15, gamma=0.1):
     # List of witness values
     wv = joblib.Parallel(n_jobs=12)(joblib.delayed(witness.witness)([np.delete(X, idx, axis=0), prototypes, x, idx, gamma]) for idx, x in enumerate(X))
     
-    return sorted(wv, key=lambda x: -abs(x[0]))[0:m]
+    return sorted(wv, key=lambda x: -abs(x[1]))[0:m]
 
 
 t = time.time()
@@ -84,3 +87,41 @@ t = time.time()
 criticisms = find_criticisms_par(X, prototypes)
 print(criticisms)
 print(time.time() - t)
+
+prototype_indices = np.argwhere(np.isin(data, prototypes).all(axis=1)).flatten()
+criticism_indices = np.argwhere(np.isin(data, [c[0] for c in criticisms]).all(axis=1)).flatten()
+
+# Perform t-SNE on the dataset for 2D visualization
+tsne_2d = TSNE(n_components=2, random_state=42)
+data_2d = tsne_2d.fit_transform(data)
+
+# Plot 2D visualization
+plt.figure()
+plt.scatter(data_2d[:, 0], data_2d[:, 1])
+
+# Mark prototypes as red triangles
+plt.scatter(data_2d[prototype_indices, 0], data_2d[prototype_indices, 1], color='red', marker='^', s=100)
+
+# Mark criticisms as blue circles
+plt.scatter(data_2d[criticism_indices, 0], data_2d[criticism_indices, 1], color='blue', marker='o', s=100)
+
+plt.title('t-SNE Visualization (2D)')
+plt.show()
+
+# Perform t-SNE on the dataset for 3D visualization
+tsne_3d = TSNE(n_components=3, random_state=42)
+data_3d = tsne_3d.fit_transform(data)
+
+# Plot 3D visualization
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(data_3d[:, 0], data_3d[:, 1], data_3d[:, 2])
+
+# Mark prototypes as red triangles
+ax.scatter(data_3d[prototype_indices, 0], data_3d[prototype_indices, 1], data_3d[prototype_indices, 2], color='red', marker='^', s=100)
+
+# Mark criticisms as blue circles
+ax.scatter(data_3d[criticism_indices, 0], data_3d[criticism_indices, 1], data_3d[criticism_indices, 2], color='blue', marker='o', s=100)
+
+ax.set_title('t-SNE Visualization (3D)')
+plt.show()

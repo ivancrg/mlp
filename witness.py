@@ -13,4 +13,4 @@ def k(xi, xj, gamma):
 def witness(args):
     X, prototypes, x, idx, gamma = args
     w = np.average([k(x, xi, gamma) for xi in X]) - np.average([k(x, zi, gamma) for zi in prototypes])
-    return (w, idx)
+    return [x, w, idx]
