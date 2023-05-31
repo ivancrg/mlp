@@ -29,7 +29,7 @@ def evaluate_as_prototype(args):
     return np.array([mmd.mmd(Xi, pi, gamma), idx])
 
 def select_prototype(datapoints):
-    return joblib.Parallel(n_jobs=12)(joblib.delayed(evaluate_as_prototype)(datapoint) for datapoint in datapoints)
+    return joblib.Parallel(n_jobs=16)(joblib.delayed(evaluate_as_prototype)(datapoint) for datapoint in datapoints)
 
 
 # Adds a prototype to list prototypes
