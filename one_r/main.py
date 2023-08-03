@@ -1,6 +1,4 @@
-import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 
 def calculate_error(predictor, result, value):
     # How often does each result (result) appear for the given value of the predictor
@@ -70,7 +68,10 @@ def one_r_multiclass(X, y):
         # Removing the class for which the rule has been calculated
         classes_counts.remove(classes_counts[0])
 
-    print(rules)
+    # Adding a default rule
+    rules.append({'class': classes_counts[0][0], 'rule': 'default'})
+
+    return rules
 
     
     
@@ -83,5 +84,5 @@ X, y = data.iloc[:, :-1], data.iloc[:, -1]
 
 rules = one_r_multiclass(X, y)
 print("Learned Rules:")
-# for target_class, rule in rules.items():
-#     print(f"For class '{target_class}': {rule}")
+for rule in rules:
+    print(f"For class '{rule['class']}': {rule['rule']}")
