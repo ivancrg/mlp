@@ -1,3 +1,7 @@
+import os
+import log
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import mmd
@@ -6,13 +10,10 @@ import joblib
 import time
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from sklearn.manifold import TSNE
-import log
-import os
 
 LOG_DIR = './log'
 data_pd = pd.read_csv('encoded.csv')
+
 
 def evaluate_as_prototype(args):
     Xi, pi, idx, gamma = args
@@ -28,6 +29,7 @@ def evaluate_as_prototype(args):
     # evaluated datapoint as prototype
     return np.array([mmd.mmd(Xi, pi, gamma), idx])
 
+
 def select_prototype(datapoints):
     return joblib.Parallel(n_jobs=16)(joblib.delayed(evaluate_as_prototype)(datapoint) for datapoint in datapoints)
 
@@ -37,21 +39,22 @@ def select_prototype(datapoints):
 
 def add_prototype(X, prototypes, gamma):
     min_mmd = float('+inf')
-    
+
     bpi = 0
-    
-    datapoints = [(X.copy(), prototypes.copy(), idx, gamma) for idx, _ in enumerate(X)]
-    
+
+    datapoints = [(X.copy(), prototypes.copy(), idx, gamma)
+                  for idx, _ in enumerate(X)]
+
     # Consider each datapoint as prototype and evaluate like that
     mmds = np.array(select_prototype(datapoints))
-    
+
     # Best prototype index (lowers mmd most)
     bpi = int(mmds[np.argmin(mmds[:, 0]), 1])
-    
+
     # Making bpith datapoint a prototype in source lists
     prototypes = np.vstack((prototypes, X[bpi]))
     X = np.delete(X, bpi, 0)
-    
+
     return X, prototypes
 
 
@@ -61,11 +64,11 @@ def add_prototype(X, prototypes, gamma):
 def find_prototypes(X, m, gamma):
     # List of chosen prototypes
     cp = np.empty((0, data.shape[1]))
-    
+
     # Find m prototypes
     for _ in range(m):
         X, cp = add_prototype(X, cp, gamma)
-    
+
     return X, cp
 
 
@@ -74,14 +77,18 @@ def find_prototypes(X, m, gamma):
 
 def find_criticisms_par(X, prototypes, m, gamma):
     # List of witness values
-    wv = joblib.Parallel(n_jobs=12)(joblib.delayed(witness.witness)([np.delete(X, idx, axis=0), prototypes, x, idx, gamma]) for idx, x in enumerate(X))
-    
+    wv = joblib.Parallel(n_jobs=12)(joblib.delayed(witness.witness)(
+        [np.delete(X, idx, axis=0), prototypes, x, idx, gamma]) for idx, x in enumerate(X))
+
     return sorted(wv, key=lambda x: -abs(x[1]))[0:m]
+
 
 def visualize(data, prototypes, criticisms, fig2dloc=None, fig3dloc=None):
     # Finding indices of prototypes and criticisms to mark them in plots
-    prototype_indices = np.argwhere(np.isin(data, prototypes).all(axis=1)).flatten()
-    criticism_indices = np.argwhere(np.isin(data, [c[0] for c in criticisms]).all(axis=1)).flatten()
+    prototype_indices = np.argwhere(
+        np.isin(data, prototypes).all(axis=1)).flatten()
+    criticism_indices = np.argwhere(
+        np.isin(data, [c[0] for c in criticisms]).all(axis=1)).flatten()
 
     # Perform t-SNE on the dataset for 2D visualization
     tsne_2d = TSNE(n_components=2, random_state=42)
@@ -92,10 +99,12 @@ def visualize(data, prototypes, criticisms, fig2dloc=None, fig3dloc=None):
     plt.scatter(data_2d[:, 0], data_2d[:, 1])
 
     # Mark prototypes as red triangles
-    plt.scatter(data_2d[prototype_indices, 0], data_2d[prototype_indices, 1], color='red', marker='^', s=100, label='Prototypes')
+    plt.scatter(data_2d[prototype_indices, 0], data_2d[prototype_indices,
+                1], color='red', marker='^', s=100, label='Prototypes')
 
     # Mark criticisms as blue circles
-    plt.scatter(data_2d[criticism_indices, 0], data_2d[criticism_indices, 1], color='blue', marker='o', s=100, label='Criticisms')
+    plt.scatter(data_2d[criticism_indices, 0], data_2d[criticism_indices,
+                1], color='blue', marker='o', s=100, label='Criticisms')
 
     plt.title('t-SNE Visualization (2D)')
     plt.legend()
@@ -103,9 +112,8 @@ def visualize(data, prototypes, criticisms, fig2dloc=None, fig3dloc=None):
     # Save the figure to a variable
     if fig2dloc is not None:
         plt.savefig(fig2dloc, format='png')
-    
+
     plt.close()
-    
 
     # Perform t-SNE on the dataset for 3D visualization
     tsne_3d = TSNE(n_components=3, random_state=42)
@@ -117,10 +125,12 @@ def visualize(data, prototypes, criticisms, fig2dloc=None, fig3dloc=None):
     ax.scatter(data_3d[:, 0], data_3d[:, 1], data_3d[:, 2])
 
     # Mark prototypes as red triangles
-    ax.scatter(data_3d[prototype_indices, 0], data_3d[prototype_indices, 1], data_3d[prototype_indices, 2], color='red', marker='^', s=100, label='Prototypes')
+    ax.scatter(data_3d[prototype_indices, 0], data_3d[prototype_indices, 1],
+               data_3d[prototype_indices, 2], color='red', marker='^', s=100, label='Prototypes')
 
     # Mark criticisms as blue circles
-    ax.scatter(data_3d[criticism_indices, 0], data_3d[criticism_indices, 1], data_3d[criticism_indices, 2], color='blue', marker='o', s=100, label='Criticisms')
+    ax.scatter(data_3d[criticism_indices, 0], data_3d[criticism_indices, 1],
+               data_3d[criticism_indices, 2], color='blue', marker='o', s=100, label='Criticisms')
 
     ax.set_title('t-SNE Visualization (3D)')
     plt.legend()
@@ -128,9 +138,10 @@ def visualize(data, prototypes, criticisms, fig2dloc=None, fig3dloc=None):
     # Save the figure to a variable
     if fig3dloc is not None:
         plt.savefig(fig3dloc, format='png')
-    
+
     plt.close()
-    
+
+
 # Selecting number of instances
 a = ''
 for n in np.linspace(30, len(data_pd), 3):
@@ -159,9 +170,12 @@ for n in np.linspace(30, len(data_pd), 3):
                 t_proto = time.time() - t_proto
 
                 t_criti = time.time()
-                criticisms = find_criticisms_par(X, prototypes, m=m_crit, gamma=gamma)
+                criticisms = find_criticisms_par(
+                    X, prototypes, m=m_crit, gamma=gamma)
                 t_criti = time.time() - t_criti
 
-                visualize(data, prototypes, criticisms, os.path.join(loc, 'plot2d.png'), os.path.join(loc, 'plot3d.png'))
+                visualize(data, prototypes, criticisms, os.path.join(
+                    loc, 'plot2d.png'), os.path.join(loc, 'plot3d.png'))
 
-                log.save_search(loc, data, prototypes, t_proto, criticisms, t_criti, m_proto, m_crit, gamma)
+                log.save_search(loc, data, prototypes, t_proto,
+                                criticisms, t_criti, m_proto, m_crit, gamma)

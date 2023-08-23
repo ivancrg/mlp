@@ -11,14 +11,13 @@ class LearnOneRule:
         self.min_samples_leaf = min_samples_leaf
 
         X, y = self.data.iloc[:, :-1], pd.DataFrame(self.data.iloc[:, -1])
-        self.X_encoded = pd.get_dummies(X)
 
-        self.feature_names, self.class_names = self.X_encoded.columns, self.data['Preoperative Diagnosis'].unique(
+        self.feature_names, self.class_names = X.columns, self.data['Preoperative Diagnosis'].unique(
         ).astype(str)
 
         self.clf = tree.DecisionTreeClassifier(
-            max_depth=self.max_depth, min_samples_leaf=self.min_samples_leaf)
-        self.clf = self.clf.fit(self.X_encoded.to_numpy(), y.to_numpy())
+            max_depth=self.max_depth, min_samples_leaf=self.min_samples_leaf, random_state=47)
+        self.clf = self.clf.fit(X.to_numpy(), y.to_numpy())
 
     def plot_classifier(self):
         plt.figure(figsize=(19, 11))
@@ -39,6 +38,7 @@ class LearnOneRule:
                 'operator': cond_operator,
                 'threshold': cond_threshold
             })
+
 
         # Leaf node
         if id_left == -1 and id_right == -1:

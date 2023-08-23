@@ -16,9 +16,6 @@ def remove_covered_instances(data, rule):
 
     # print(f'Data length: {len(data)}')
 
-    # One-hot encoding (rules are based on OHE-d data)
-    data_encoded = pd.get_dummies(data)
-
     # Creating condition for removing instances
     # (all instances under remove condition should be removed)
     remove_condition = pd.Series([True] * len(data))
@@ -26,9 +23,9 @@ def remove_covered_instances(data, rule):
         feat, op, thr = condition['feature'], condition['operator'], condition['threshold']
 
         if op == '<=':
-            remove_condition &= (data_encoded[feat] <= thr)
+            remove_condition &= (data[feat] <= thr)
         elif op == '>':
-            remove_condition &= (data_encoded[feat] > thr)
+            remove_condition &= (data[feat] > thr)
         else:
             print("main.py::remove_covered_instances WARNING: Unknown operator!")
 
@@ -108,9 +105,47 @@ def sc_multiclass(data):
             'feature': 'default',
             'operator': '',
             'threshold': ''
-        }], classes_counts[0][0])]})
+        }], 1)]})
 
     return rules
+
+
+def predict(clf, input):
+    input.loc[:, 'Prediction'] = "N/A"
+    
+    for c in clf:
+        current_class = c['class']
+
+        # Keeps the record of all instances valid for
+        # assigning a prediction of current class
+        # (e.g. if a prediction is 0, the valid values of
+        #  appropriate instances will be set to False)
+        valid = (input['Prediction'] == "N/A")
+
+        for rule, pred in c['rules_preds']:
+            if len(rule) == 0:
+                if pred == 1:
+                    input.loc[valid, 'Prediction'] = current_class
+                continue
+
+            pred_condition = (input['Prediction'] == "N/A")
+
+            for condition in rule:
+                feat, op, thr = condition['feature'], condition['operator'], condition['threshold']
+
+                if op == '<=':
+                    pred_condition &= (input[feat] <= thr)
+                elif op == '>':
+                    pred_condition &= (input[feat] > thr)
+                else:
+                    print(f"main.py::predict WARNING: Unknown operator! {current_class} {feat} {op} {thr}")
+            
+            if pred == 0:
+                valid &= (~pred_condition)
+            else:
+                input.loc[(valid & pred_condition), 'Prediction'] = current_class
+
+    return input
 
 
 def print_rules_preds(rules_preds):
@@ -134,3 +169,5 @@ for res in result:
     print(f"Rules for class {res['class']}:")
     print_rules_preds(res['rules_preds'])
     print()
+
+print(predict(result, data.head().copy()))

@@ -7,8 +7,10 @@ from sklearn.ensemble import RandomForestClassifier
 
 data = pd.read_csv('../encoded.csv')
 
-train_data, remaining_data = train_test_split(data, test_size=0.3, random_state=42)
-valid_data, test_data = train_test_split(remaining_data, test_size=0.35, random_state=42)
+train_data, remaining_data = train_test_split(
+    data, test_size=0.3, random_state=42)
+valid_data, test_data = train_test_split(
+    remaining_data, test_size=0.35, random_state=42)
 
 X_train, y_train = train_data.iloc[:, :-1], train_data.iloc[:, -1]
 X_valid, y_valid = valid_data.iloc[:, :-1], valid_data.iloc[:, -1]
@@ -20,7 +22,8 @@ rf_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
 metrics = ['score']
 
 k = 2
-scores = cross_validate(rf_classifier, pd.concat([X_train, X_valid]), pd.concat([y_train, y_valid]), cv=k)
+scores = cross_validate(rf_classifier, pd.concat(
+    [X_train, X_valid]), pd.concat([y_train, y_valid]), cv=k)
 
 for metric_idx, metric in enumerate(metrics):
     plt.figure(figsize=(10, 6))

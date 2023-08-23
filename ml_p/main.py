@@ -6,8 +6,10 @@ from sklearn.model_selection import train_test_split
 
 data = pd.read_csv('../encoded.csv')
 
-train_data, remaining_data = train_test_split(data, test_size=0.3, random_state=42)
-valid_data, test_data = train_test_split(remaining_data, test_size=0.35, random_state=42)
+train_data, remaining_data = train_test_split(
+    data, test_size=0.3, random_state=42)
+valid_data, test_data = train_test_split(
+    remaining_data, test_size=0.35, random_state=42)
 
 X_train, y_train = train_data.iloc[:, :-1], train_data.iloc[:, -1]
 X_valid, y_valid = valid_data.iloc[:, :-1], valid_data.iloc[:, -1]
