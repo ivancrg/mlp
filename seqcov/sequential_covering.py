@@ -5,13 +5,15 @@ import matplotlib.pyplot as plt
 
 
 class SequentialCovering:
-    
-    def __init__(self, data, multiclass=False):
+
+    def __init__(self, data, multiclass=False, max_depth=3, min_samples_leaf=1):
         self.data_orig = data
         self.data_orig.reset_index(drop=True, inplace=True)
         self.multiclass = multiclass
+        self.max_depth = max_depth
+        self.min_samples_leaf = min_samples_leaf
         self.result = None
-    
+
     def remove_covered_instances(self, data, rule):
         data.reset_index(drop=True, inplace=True)
 
@@ -35,13 +37,11 @@ class SequentialCovering:
 
         return new_data
 
-
     def fit(self):
         if self.multiclass:
             self.result = self.sc_multiclass(self.data_orig.copy())
         else:
             self.result = self.sc(self.data_orig.copy())
-
 
     def sc(self, data):
         rules_preds = []
@@ -49,7 +49,8 @@ class SequentialCovering:
         while len(data) > 0:
             data.reset_index(drop=True, inplace=True)
 
-            lor = LearnOneRule(data.copy(), max_depth=3, min_samples_leaf=1)
+            lor = LearnOneRule(data.copy(), max_depth=self.max_depth,
+                               min_samples_leaf=self.min_samples_leaf)
             _, new_rule, pred, n_covered = lor.learn_one_rule(
                 0, None, None, None, [])
             # lor.plot_classifier()
@@ -63,12 +64,11 @@ class SequentialCovering:
 
         return rules_preds
 
-
     def sc_multiclass(self, data):
         # Array of tuples - (class, number of instances of that class)
         y = pd.DataFrame(data.iloc[:, -1])
         classes_counts = [(c, sum(y.iloc[:, 0] == c))
-                        for c in y.iloc[:, 0].unique()]
+                          for c in y.iloc[:, 0].unique()]
         classes_counts.sort(key=lambda x: x[1])
 
         rules = []
@@ -87,9 +87,9 @@ class SequentialCovering:
             # Copy of the dataset to be modified to binary classification
             data_current = data.copy()
             data_current.loc[data.iloc[:, -1] ==
-                            current_class, 'Preoperative Diagnosis'] = 1
+                             current_class, 'Preoperative Diagnosis'] = 1
             data_current.loc[data.iloc[:, -1] !=
-                            current_class, 'Preoperative Diagnosis'] = 0
+                             current_class, 'Preoperative Diagnosis'] = 0
 
             # Calculating the rule for the current class
             rules_preds_bin = self.sc(data_current)
@@ -101,7 +101,8 @@ class SequentialCovering:
                     data = self.remove_covered_instances(data, r)
 
             # Add the new rules to result
-            rules.append({'class': current_class, 'rules_preds': rules_preds_bin})
+            rules.append(
+                {'class': current_class, 'rules_preds': rules_preds_bin})
 
             # Removing the class for which the rule has been calculated
             classes_counts.remove(classes_counts[0])
@@ -116,7 +117,7 @@ class SequentialCovering:
             }], 1)]})
 
         return rules
-    
+
     def predict(self, input):
         if self.multiclass:
             return self.predict_mc(self.result, input)
@@ -124,32 +125,33 @@ class SequentialCovering:
             return self.predict_binary(self.result, input)
 
     def predict_binary(self, result, input):
-            input.loc[:, 'Prediction'] = "N/A"
-            
-            for rule_pred in result:
-                rule, pred = rule_pred
+        input.loc[:, 'Prediction'] = "N/A"
 
-                # Keeps the record of all instances valid for
-                # assigning a prediction
-                pred_condition = (input['Prediction'] == "N/A")
+        for rule_pred in result:
+            rule, pred = rule_pred
 
-                for condition in rule:
-                    feat, op, thr = condition['feature'], condition['operator'], condition['threshold']
+            # Keeps the record of all instances valid for
+            # assigning a prediction
+            pred_condition = (input['Prediction'] == "N/A")
 
-                    if op == '<=':
-                        pred_condition &= (input[feat] <= thr)
-                    elif op == '>':
-                        pred_condition &= (input[feat] > thr)
-                    else:
-                        print(f"main.py::predict WARNING: Unknown operator! {feat} {op} {thr} {len(rule)}")
-                    
-                input.loc[pred_condition, 'Prediction'] = pred
+            for condition in rule:
+                feat, op, thr = condition['feature'], condition['operator'], condition['threshold']
 
-            return input
+                if op == '<=':
+                    pred_condition &= (input[feat] <= thr)
+                elif op == '>':
+                    pred_condition &= (input[feat] > thr)
+                else:
+                    print(
+                        f"main.py::predict WARNING: Unknown operator! {feat} {op} {thr} {len(rule)}")
+
+            input.loc[pred_condition, 'Prediction'] = pred
+
+        return input
 
     def predict_mc(self, clf, input):
         input.loc[:, 'Prediction'] = "N/A"
-        
+
         for c in clf:
             current_class = c['class']
 
@@ -164,7 +166,7 @@ class SequentialCovering:
                     if pred == 1:
                         input.loc[valid, 'Prediction'] = current_class
                     continue
-                
+
                 pred_condition = (input['Prediction'] == "N/A")
 
                 for condition in rule:
@@ -175,15 +177,16 @@ class SequentialCovering:
                     elif op == '>':
                         pred_condition &= (input[feat] > thr)
                     else:
-                        print(f"main.py::predict WARNING: Unknown operator! {current_class} {feat} {op} {thr} {len(rule)}")
-                
+                        print(
+                            f"main.py::predict WARNING: Unknown operator! {current_class} {feat} {op} {thr} {len(rule)}")
+
                 if pred == 0:
                     valid &= (~pred_condition)
                 else:
-                    input.loc[(valid & pred_condition), 'Prediction'] = current_class
+                    input.loc[(valid & pred_condition),
+                              'Prediction'] = current_class
 
         return input
-
 
     def print_rp_binary(self, rules_preds):
         for rule, pred in rules_preds:

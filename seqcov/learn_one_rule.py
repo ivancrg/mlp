@@ -39,7 +39,6 @@ class LearnOneRule:
                 'threshold': cond_threshold
             })
 
-
         # Leaf node
         if id_left == -1 and id_right == -1:
             # print(id, self.clf.tree_.impurity[id], rules, self.clf.tree_.value[id], np.argmax(
