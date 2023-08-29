@@ -5,19 +5,24 @@ import numpy as np
 
 
 class LearnOneRule:
-    def __init__(self, data, max_depth, min_samples_leaf):
+    def __init__(self, data, max_depth, min_samples_leaf, output_name='Postoperative diagnosis', class_names=['0', '1']):
         self.data = data
         self.max_depth = max_depth
         self.min_samples_leaf = min_samples_leaf
+        self.output_name = output_name
 
         X, y = self.data.iloc[:, :-1], pd.DataFrame(self.data.iloc[:, -1])
 
-        self.feature_names, self.class_names = X.columns, self.data['Preoperative Diagnosis'].unique(
-        ).astype(str)
+        self.feature_names = X.columns
+        self.class_names = class_names
 
         self.clf = tree.DecisionTreeClassifier(
             max_depth=self.max_depth, min_samples_leaf=self.min_samples_leaf, random_state=47)
         self.clf = self.clf.fit(X.to_numpy(), y.to_numpy())
+
+        # print(self.data[self.output_name].value_counts())
+        # print(self.class_names)
+        # print(self.clf.classes_)
 
     def plot_classifier(self):
         plt.figure(figsize=(19, 11))

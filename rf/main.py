@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.ensemble import RandomForestClassifier
 
-data = pd.read_csv('../encoded.csv')
+data = pd.read_csv('../test_1st.csv')
 
 train_data, remaining_data = train_test_split(
     data, test_size=0.3, random_state=42)
