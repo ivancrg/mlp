@@ -2,7 +2,7 @@ import pandas as pd
 from sequential_covering import SequentialCovering
 from sklearn.model_selection import train_test_split
 
-data = pd.read_csv('../test_spl_cplx_othr.csv', index_col=False)
+data = pd.read_csv('./test_spl_cplx_othr.csv', index_col=False)
 
 
 # Splitting the data into train and test sets (80% train, 20% test)

@@ -11,8 +11,8 @@ import time
 import matplotlib
 matplotlib.use('Agg')
 
-LOG_DIR = './log'
-data_pd = pd.read_csv('encoded.csv')
+LOG_DIR = './log_test_spl_cplx_othr'
+data_pd = pd.read_csv('test_spl_cplx_othr.csv')
 
 
 def evaluate_as_prototype(args):

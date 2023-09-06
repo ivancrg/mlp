@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier
 
-data = pd.read_csv('../new_encoded.csv')
+data = pd.read_csv('./test_spl_cplx_othr.csv')
 
 train_data, remaining_data = train_test_split(
     data, test_size=0.3, random_state=42)

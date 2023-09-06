@@ -19,7 +19,7 @@ X_train_valid = pd.concat([X_train, X_valid])
 y_train_valid = pd.concat([y_train, y_valid])
 
 clf = MLPClassifier(random_state=42, hidden_layer_sizes=(
-    512, 512, 256, 256, 128, 64), early_stopping=True, verbose=True, solver='sgd', alpha=0.00001)
+    512, 512, 256, 256, 128, 64), early_stopping=True, verbose=True)
 
 k = 5
 scores = cross_validate(clf, X_train_valid.to_numpy(), y_train_valid.to_numpy(),
