@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_validate
 from sklearn.ensemble import RandomForestClassifier
 
-data = pd.read_csv('../encoded.csv')
+data = pd.read_csv('./final/postop_spl_cplx_othr.csv')
 
 train_data, remaining_data = train_test_split(
     data, test_size=0.3, random_state=42)
@@ -21,7 +21,7 @@ rf_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
 # metrics = ['accuracy', 'precision_macro', 'recall_macro', 'f1_macro']
 metrics = ['score']
 
-k = 2
+k = 5
 scores = cross_validate(rf_classifier, pd.concat(
     [X_train, X_valid]), pd.concat([y_train, y_valid]), cv=k)
 
