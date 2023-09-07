@@ -2,40 +2,37 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_validate
 from sklearn.ensemble import RandomForestClassifier
+import display_data as dd
 
-data = pd.read_csv('./final/postop_spl_cplx_othr.csv')
+
+plt.rcParams.update({'font.size': 14})
+
+folder = './report/NO_OS/histology'
+file = '/data.csv'
+
+data = pd.read_csv(folder + file)
 
 train_valid_data, test_data = train_test_split(
-    data, test_size=0.2, random_state=42)
-train_data, valid_data = train_test_split(
-    train_valid_data, test_size=0.2, random_state=42)
+    data, test_size=0.2, random_state=47)
 
-X_train, y_train = train_data.iloc[:, :-1], train_data.iloc[:, -1]
-X_valid, y_valid = valid_data.iloc[:, :-1], valid_data.iloc[:, -1]
+X_train_valid, y_train_valid = train_valid_data.iloc[:,
+                                                     :-1], train_valid_data.iloc[:, -1]
 X_test, y_test = test_data.iloc[:, :-1], test_data.iloc[:, -1]
 
 rf_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
 
 k = 5
-scores = cross_val_score(rf_classifier, pd.concat(
-    [X_train, X_valid]), pd.concat([y_train, y_valid]), cv=k)
+scores = cross_validate(rf_classifier,  X_train_valid,
+                        y_train_valid, cv=k, return_estimator=True)
 
-for fold, accuracy in enumerate(scores):
-    print(f"Fold {fold+1} accuracy: {accuracy}")
-
-plt.figure(figsize=(10, 6))
-bars = plt.bar(range(1, k + 1), scores)
-for bar in bars:
-    yval = bar.get_height()
-    plt.text(bar.get_x() + bar.get_width() / 2, yval,
-             round(yval, 5), ha='center', va='bottom')
+dd.visualize_cv(k, scores, folder, 'rf_')
 
 
-plt.xlabel('Fold')
-plt.ylabel('Accuracy')
+rf_classifier = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_classifier.fit(X_train_valid, y_train_valid)
+y_test_pred = rf_classifier.predict(X_test)
+dd.visualize_cr_cm(y_test, y_test_pred, folder, 'rf_')
 
 plt.show()
-
-print(f"Average accuracy: {np.mean(scores)}")

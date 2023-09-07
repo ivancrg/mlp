@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split, cross_validate
 
-data = pd.read_csv('../test_spl_cplx_othr_norm.csv')
+data = pd.read_csv('./final/postop_spl_cplx_othr_norm.csv')
 
 train_data, remaining_data = train_test_split(
     data, test_size=0.3, random_state=42)

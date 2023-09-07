@@ -2,9 +2,10 @@ import pandas as pd
 from sklearn import tree
 from learn_one_rule import LearnOneRule
 import matplotlib.pyplot as plt
+from sklearn.base import BaseEstimator, ClassifierMixin
 
 
-class SequentialCovering:
+class SequentialCovering(BaseEstimator, ClassifierMixin):
 
     def __init__(self, data, multiclass=False, max_depth=3, min_samples_leaf=1, output_name='Postoperative diagnosis'):
         self.data_orig = data

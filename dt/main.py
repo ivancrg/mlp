@@ -5,42 +5,34 @@ from sklearn.model_selection import cross_validate
 from sklearn.model_selection import train_test_split
 from sklearn import tree
 from sklearn.tree import DecisionTreeClassifier
+import display_data as dd 
 
-data = pd.read_csv('./test_spl_cplx_othr.csv')
+plt.rcParams.update({'font.size': 14})
 
-train_data, remaining_data = train_test_split(
-    data, test_size=0.3, random_state=42)
-valid_data, test_data = train_test_split(
-    remaining_data, test_size=0.35, random_state=42)
+folder = './report/NO_OS/postop_binary'
+file = '/data.csv'
 
-X_train, y_train = train_data.iloc[:, :-1], train_data.iloc[:, -1]
-X_valid, y_valid = valid_data.iloc[:, :-1], valid_data.iloc[:, -1]
+data = pd.read_csv(folder + file)
+
+train_valid_data, test_data = train_test_split(
+    data, test_size=0.2, random_state=42)
+
+X_train_valid, y_train_valid = train_valid_data.iloc[:,
+                                                     :-1], train_valid_data.iloc[:, -1]
 X_test, y_test = test_data.iloc[:, :-1], test_data.iloc[:, -1]
 
 dt_classifier = DecisionTreeClassifier(random_state=42)
 
 k = 5
-scores = cross_validate(dt_classifier, pd.concat([X_train, X_valid]), pd.concat(
-    [y_train, y_valid]), cv=k, return_estimator=True)
+scores = cross_validate(dt_classifier, X_train_valid,
+                        y_train_valid, cv=k, return_estimator=True)
 
-for fold, score in enumerate(scores['test_score']):
-    print(f"Fold {fold+1} accuracy: {score}")
+dd.visualize_cv(k, scores, folder, prefix='dt_')
 
-print(f"Average accuracy: {scores['test_score'].mean()}")
+dt_classifier = DecisionTreeClassifier(random_state=42)
+dt_classifier.fit(X_train_valid, y_train_valid)
 
-plt.figure(1, figsize=(10, 6))
-bars = plt.bar(range(1, k + 1), scores['test_score'])
-for bar in bars:
-    yval = bar.get_height()
-    plt.text(bar.get_x() + bar.get_width() / 2, yval,
-             round(yval, 5), ha='center', va='bottom')
-
-plt.xlabel('Fold')
-plt.ylabel('Accuracy')
-
-for fold, t in enumerate(scores['estimator']):
-    print(f"Plotting fold {fold+1} tree")
-    plt.figure(f'Fold {fold + 1}\'s tree')
-    tree.plot_tree(t, filled=True)
+y_test_pred = dt_classifier.predict(X_test)
+dd.visualize_cr_cm(y_test, y_test_pred, folder, prefix='dt_')
 
 plt.show()
