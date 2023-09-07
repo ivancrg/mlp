@@ -1,91 +1,55 @@
 import pandas as pd
+import oner
+from sklearn.model_selection import train_test_split, StratifiedKFold
+from sklearn.metrics import accuracy_score
+import numpy as np
+import display_data as dd
 
+# data = {
+#     'location': ['good', 'good', 'good', 'bad', 'good', 'good', 'bad', 'bad', 'bad', 'bad'],
+#     'size': ['small', 'big', 'big', 'medium', 'medium', 'small', 'medium', 'small', 'medium', 'small'],
+#     'pets': ['yes', 'no', 'no', 'no', 'only cats', 'only cats', 'yes', 'yes', 'yes', 'no'],
+#     'value': ['high', 'high', 'high', 'medium', 'medium', 'medium', 'medium', 'low', 'low', 'low']
+# }
 
-def calculate_error(predictor, result, value):
-    # How often does each result (result) appear for the given value of the predictor
-    value_counts = result[predictor == value].value_counts()
+# # Create a DataFrame
+# data = pd.DataFrame(data)
 
-    # The most frequent class in relation to this predictor's value
-    # (The class (result) that is most commonly seen in combination with this predictor's value)
-    most_frequent_class = value_counts.idxmax()
+FOLDER = './report/NO_OS/histology_binary'
+FILE = '/data_categorical.csv'
+K = 5
 
-    # Calculate the total error (misclassifications) for this value of the predictor
-    error = len(result[predictor == value]) - value_counts[most_frequent_class]
+data = pd.read_csv(FOLDER + FILE, index_col=False)
 
-    return value, error, most_frequent_class
+# Splitting the data into train and test sets (80% train, 20% test)
+train_valid_data, test_data = train_test_split(data, test_size=0.2, random_state=42, shuffle=True)
 
+for df in [train_valid_data, test_data]:
+    df.reset_index(drop=True, inplace=True)
 
-def one_r(X, y):
-    # Initial parameter setup
-    best_predictor = None
-    best_error = float('inf')
+X_train_valid, y_train_valid = train_valid_data.iloc[:, :-1], train_valid_data.iloc[:, -1]
+X_test, y_test = test_data.iloc[:, :-1], test_data.iloc[:, -1]
 
-    # Try all classes as a feature
-    for feature in X.columns:
-        print(f'Calculating errors for feature {feature}')
+skf = StratifiedKFold(n_splits=K, shuffle=True, random_state=42)
+val_accuracies = []
+for fold_idx, fold in enumerate(skf.split(X_train_valid, y_train_valid)):
+    train_index, val_index = fold
+    X_train_fold, X_val_fold = X_train_valid.iloc[train_index], X_train_valid.iloc[val_index]
+    y_train_fold, y_val_fold = y_train_valid[train_index], y_train_valid[val_index]
 
-        # Find the total error of the selected feature for each possible feature value
-        total = [calculate_error(X[feature], y, value)
-                 for value in X[feature].unique()]
-        print(total)
+    fold_predictor = oner.OneR()
+    fold_predictor.fit(X_train_fold, y_train_fold)
 
-        # With optimum setup, how much misclassifications will a predictor based on this feature have?
-        total_error = sum(e for _, e, _ in total)
+    preds = fold_predictor.predict(X_val_fold)
+    mean_acc = accuracy_score(preds, y_val_fold.to_list())
+    val_accuracies.append(mean_acc)
 
-        if total_error < best_error:
-            best_predictor = {
-                'feature': feature,
-                'values': [v for v, _, _ in total],
-                'result': [r for _, _, r in total]
-            }
+kf_scores = {'test_score': np.array(val_accuracies)}
+dd.visualize_cv(K, kf_scores, FOLDER, f'oner_')
 
-            best_error = total_error
+clf = oner.OneR()
+clf.fit(X_train_valid, y_train_valid)
+print("Best predictor: ", clf.best_predictor)
 
-        print(
-            f'{feature} predictor accuracy: {round((len(X) - total_error) / len(X), 3)}')
-
-    return best_predictor
-
-
-def one_r_multiclass(X, y):
-    # Array of tuples - (class, number of instances of that class)
-    classes_counts = [(c, sum(y == c)) for c in y.unique()]
-    classes_counts.sort(key=lambda x: x[1])
-
-    rules = []
-
-    print(classes_counts, y.value_counts(ascending=True))
-
-    # While there are classes for which the rule hasn't been set yet
-    while len(classes_counts) > 1:
-        # Current class for which a rule should be set
-        c = classes_counts[0][0]
-
-        # Copy of the dataset to be modified to binary classification
-        yc = y.copy()
-        yc.loc[yc == c] = 1
-        yc.loc[yc != c] = 0
-
-        # Calculating the rule for the current class
-        rule = one_r(X, yc)
-        rules.append({'class': c, 'rule': rule})
-
-        # Removing the class for which the rule has been calculated
-        classes_counts.remove(classes_counts[0])
-
-    # Adding a default rule
-    rules.append({'class': classes_counts[0][0], 'rule': 'default'})
-
-    return rules
-
-
-data = pd.read_csv('../encoded_categorical.csv', index_col=False)
-X, y = data.iloc[:, :-1], data.iloc[:, -1]
-
-# best_predictor = one_r(X, y)
-# print("Best predictor: ", best_predictor)
-
-rules = one_r_multiclass(X, y)
-print("Learned Rules:")
-for rule in rules:
-    print(f"For class '{rule['class']}': {rule['rule']}")
+y_pred = clf.predict(X_test)
+dd.visualize_cr_cm(y_test.to_list(), y_pred, FOLDER, f'oner_')

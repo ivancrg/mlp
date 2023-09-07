@@ -11,8 +11,9 @@ import time
 import matplotlib
 matplotlib.use('Agg')
 
-LOG_DIR = './log_test_spl_cplx_othr'
-data_pd = pd.read_csv('test_spl_cplx_othr.csv')
+folder = './report/NO_OS/histology_binary'
+LOG_DIR = folder + '/pc_log'
+data_pd = pd.read_csv(folder + '/data.csv')
 
 
 def evaluate_as_prototype(args):
@@ -141,41 +142,40 @@ def visualize(data, prototypes, criticisms, fig2dloc=None, fig3dloc=None):
 
     plt.close()
 
+data = data_pd.to_numpy()
+it = 0
 
-# Selecting number of instances
-a = ''
-for n in np.linspace(30, len(data_pd), 3):
-    n = int(n)
-    data = data_pd.loc[0:n]
-    data = data.to_numpy()
+# Selecting number of prototypes
+for m_proto in np.linspace(15, 15, 1):
+    m_proto = int(m_proto)
 
-    # Selecting number of prototypes
-    for m_proto in np.linspace(3, 20, 3):
-        m_proto = int(m_proto)
+    # Selecting number of criticisms
+    for m_crit in np.linspace(10, 10, 1):
+        m_crit = int(m_crit)
 
-        # Selecting number of criticisms
-        for m_crit in np.linspace(3, 20, 3):
-            m_crit = int(m_crit)
+        # Selecting gamma
+        for gamma in np.linspace(0.2, 0.4, 2):
+            folder_name = f'n={len(data)}_mproto={m_proto}_mcrit={m_crit}_gamma={gamma}'
 
-            # Selecting gamma
-            for gamma in range(5, 106, 20):
-                gamma /= 100
+            print(f'Starting {it} - {folder_name}...')
 
-                folder_name = f'n={len(data)}_mproto={m_proto}_mcrit={m_crit}_gamma={gamma}'
-                loc = os.path.join(LOG_DIR, folder_name)
-                os.mkdir(loc)
+            loc = os.path.join(LOG_DIR, folder_name)
+            os.mkdir(loc)
 
-                t_proto = time.time()
-                X, prototypes = find_prototypes(data, m=m_proto, gamma=gamma)
-                t_proto = time.time() - t_proto
+            t_proto = time.time()
+            X, prototypes = find_prototypes(data, m=m_proto, gamma=gamma)
+            t_proto = time.time() - t_proto
 
-                t_criti = time.time()
-                criticisms = find_criticisms_par(
-                    X, prototypes, m=m_crit, gamma=gamma)
-                t_criti = time.time() - t_criti
+            t_criti = time.time()
+            criticisms = find_criticisms_par(
+                X, prototypes, m=m_crit, gamma=gamma)
+            t_criti = time.time() - t_criti
 
-                visualize(data, prototypes, criticisms, os.path.join(
-                    loc, 'plot2d.png'), os.path.join(loc, 'plot3d.png'))
+            visualize(data, prototypes, criticisms, os.path.join(
+                loc, 'plot2d.png'), os.path.join(loc, 'plot3d.png'))
 
-                log.save_search(loc, data, prototypes, t_proto,
-                                criticisms, t_criti, m_proto, m_crit, gamma)
+            log.save_search(loc, data, prototypes, t_proto,
+                            criticisms, t_criti, m_proto, m_crit, gamma)
+            
+            it += 1
+            print(f'Progress: {it / (1 * 1 * 2) * 100}% ({it}/{(1 * 1 * 2)})')

@@ -9,13 +9,13 @@ import display_data as dd
 
 plt.rcParams.update({'font.size': 14})
 
-folder = './report/NO_OS/histology'
+folder = './report/NO_OS/postop'
 file = '/data.csv'
 
 data = pd.read_csv(folder + file)
 
 train_valid_data, test_data = train_test_split(
-    data, test_size=0.2, random_state=47)
+    data, test_size=0.2, random_state=42)
 
 X_train_valid, y_train_valid = train_valid_data.iloc[:,
                                                      :-1], train_valid_data.iloc[:, -1]
