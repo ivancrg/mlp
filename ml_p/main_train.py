@@ -21,7 +21,7 @@ result = mlp.train(
     0.1,
     [early_stopping_callback, rlr_callback],
     dropout=0.24,
-    save_folder=folder,
+    save_folder=None,
     oversampling=False,
-    test=True
+    test=False
 )

@@ -65,5 +65,5 @@ for loss in losses:
                 print(val_accuracies, names)
                 print(best)
                 print(f'Progress: {i}/{len(losses) * len(optimizers) * len(learning_rates) * len(dropouts)} ({round(i / (len(losses) * len(optimizers) * len(learning_rates) * len(dropouts)) * 100, 2)}%)')
-
+                exit()
 log.to_csv(f'{folder}/nn_gs_log.csv', index=False)
