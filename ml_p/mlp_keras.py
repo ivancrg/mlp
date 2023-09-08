@@ -58,7 +58,7 @@ class MLP():
 
         return optimizer
 
-    def create_model(self, input_features, outputs, input_layer, hidden_layers, dropout):
+    def create_model(self, input_features, outputs, input_layer, hidden_layers, dropout, binary=False):
         model = Sequential()
         model.add(Dense(input_layer, input_shape=(
             input_features,), activation="relu"))
@@ -68,6 +68,9 @@ class MLP():
             model.add(Dropout(dropout))
 
         model.add(Dense(outputs, activation="softmax"))
+
+        if binary:
+            model.add(Dense(1, activation="softmax"))
 
         return model
 
@@ -93,15 +96,17 @@ class MLP():
 
             df = pd.concat([df, tdf], ignore_index=True)
         
-        unique_rows_with_zero = df[df[output_name] == 0].drop_duplicates().shape[0]
-        print(f"Number of unique rows with 0 in the last column: {unique_rows_with_zero}")
-        unique_rows_with_one = df[df[output_name] == 1].drop_duplicates().shape[0]
-        print(f"Number of unique rows with 1 in the last column: {unique_rows_with_one}")
-        print(df[output_name].value_counts())
+        # unique_rows_with_zero = df[df[output_name] == 0].drop_duplicates().shape[0]
+        # print(f"Number of unique rows with 0 in the last column: {unique_rows_with_zero}")
+        # unique_rows_with_one = df[df[output_name] == 1].drop_duplicates().shape[0]
+        # print(f"Number of unique rows with 1 in the last column: {unique_rows_with_one}")
+        # print(df[output_name].value_counts())
+        
+        df = df.sample(frac=1, random_state=42)
 
         return df
 
-    def cv(self, input_features, outputs, optimizer_text='Adam', learning_rate=0.001, callbacks=[], input_layer=512, hidden_layers=[512, 256, 128], dropout=0.2, visualization_save_folder=None, oversampling=False):
+    def cv(self, input_features, outputs, optimizer_text='Adam', learning_rate=0.001, callbacks=[], input_layer=512, hidden_layers=[512, 256, 128], dropout=0.2, visualization_save_folder=None, oversampling=False, loss='categorical_crossentropy'):
         n_splits = 5
         skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
 
@@ -124,13 +129,18 @@ class MLP():
                 X_train_fold, y_train_fold = train_fold.iloc[:, :-1].to_numpy(), pd.get_dummies(train_fold.iloc[:, -1]).astype(float).to_numpy()
 
             model = self.create_model(
-                input_features, outputs, input_layer, hidden_layers, dropout)
+                input_features, outputs, input_layer, hidden_layers, dropout, binary=(loss=='binary_crossentropy'))
+            model.summary()
 
             model.compile(
-                loss='categorical_crossentropy',
+                loss=loss,
                 optimizer=self.get_optimizer(optimizer_text, learning_rate),
                 metrics=["accuracy"]
             )
+            
+            if loss != 'categorical_crossentropy':
+                y_train_fold = np.argmax(y_train_fold, axis=1)
+                y_val_fold = np.argmax(y_val_fold, axis=1)
 
             history = model.fit(
                 X_train_fold, y_train_fold,
@@ -149,7 +159,7 @@ class MLP():
             val_loss = history.history['val_loss'][np.argmax(
                 history.history['val_accuracy'])]
 
-            name = f'{input_layer}_{hidden_layers}_{dropout}_{optimizer_text}_{learning_rate}_{fold_idx}'
+            name = f'{input_layer}_{hidden_layers}_{dropout}_{optimizer_text}_{loss}_{learning_rate}_{fold_idx}'
             # model.save(f'{visualization_save_folder}/{name}')
 
             # Append the accuracy and loss to the lists
@@ -193,7 +203,7 @@ class MLP():
         plt.tight_layout()
         plt.savefig(location)
 
-    def train(self, input_features, outputs, optimizer_text='Adam', learning_rate=0.001, callbacks=[], input_layer=512, hidden_layers=[512, 256, 128], dropout=0.2, save_folder=None, test=False, oversampling=False):
+    def train(self, input_features, outputs, optimizer_text='Adam', learning_rate=0.001, callbacks=[], input_layer=512, hidden_layers=[512, 256, 128], dropout=0.2, save_folder=None, test=False, oversampling=False, loss='categorical_crossentropy'):
         X_train, X_valid, y_train, y_valid = train_test_split(
             self.X_train, self.y_train, stratify=self.y_train, test_size=0.2, random_state=42, shuffle=True)
         
@@ -205,13 +215,17 @@ class MLP():
             X_train, y_train = train_df.iloc[:, :-1].to_numpy(), pd.get_dummies(train_df.iloc[:, -1]).astype(float).to_numpy()
 
         model = self.create_model(
-                input_features, outputs, input_layer, hidden_layers, dropout)
+                input_features, outputs, input_layer, hidden_layers, dropout, binary=(loss=='binary_crossentropy'))
 
         model.compile(
-            loss='categorical_crossentropy',
+            loss=loss,
             optimizer=self.get_optimizer(optimizer_text, learning_rate),
             metrics=["accuracy"]
         )
+
+        if loss != 'categorical_crossentropy':
+            y_train = np.argmax(y_train, axis=1)
+            y_valid = np.argmax(y_valid, axis=1)
 
         history = model.fit(
             X_train, y_train,
@@ -223,7 +237,7 @@ class MLP():
         )
 
         if save_folder is not None:
-            name = f'{input_layer}_{hidden_layers}_{dropout}_{optimizer_text}_{learning_rate}'
+            name = f'{input_layer}_{hidden_layers}_{dropout}_{optimizer_text}_{loss}_{learning_rate}'
             model.save(f'{save_folder}/nn_save_{name}')
             self.plot_histories(history, f'{save_folder}/{name}_histories.png')
 
