@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn import tree
 from learn_one_rule import LearnOneRule
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 
@@ -122,11 +123,17 @@ class SequentialCovering(BaseEstimator, ClassifierMixin):
 
         return rules
 
-    def predict(self, input):
+    def predict_tmp(self, input):
         if self.multiclass:
             return self.predict_mc(self.result, input)
         else:
             return self.predict_binary(self.result, input)
+        
+    def predict(self, input):
+        if self.multiclass:
+            return np.array(self.predict_mc(self.result, input)['Prediction'].to_list())
+        else:
+            return np.array(self.predict_binary(self.result, input)['Prediction'].to_list())
 
     def predict_binary(self, result, input):
         input.loc[:, 'Prediction'] = "N/A"

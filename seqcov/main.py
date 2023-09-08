@@ -17,7 +17,7 @@ sc.fit()
 print("Learned Rules:")
 sc.print_rules_preds()
 
-preds = sc.predict(test_data)
+preds = sc.predict_tmp(test_data)
 print((preds['Postoperative Diagnosis'] == preds['Prediction']).mean())
 print(preds['Prediction'].value_counts())
 y_test_class, y_pred_class = [tc[0] for tc in pd.DataFrame(preds.iloc[:, -2]).to_numpy()], [pc[0] for pc in pd.DataFrame(preds.iloc[:, -1]).to_numpy()]

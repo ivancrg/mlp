@@ -37,7 +37,7 @@ for fold_idx, fold in enumerate(skf.split(X_train_valid, y_train_valid)):
     sc = SequentialCovering(train_data, multiclass=MULTICLASS, max_depth=7, min_samples_leaf=2, output_name=PREDICTION_LABEL)
     sc.fit()
 
-    preds = sc.predict(valid_data)
+    preds = sc.predict_tmp(valid_data)
     mean_acc = (preds[PREDICTION_LABEL] == preds['Prediction']).mean()
     val_accuracies.append(mean_acc)
     
@@ -51,6 +51,6 @@ sc.fit()
 print("Learned Rules:")
 sc.print_rules_preds()
 
-preds = sc.predict(test_data)
+preds = sc.predict_tmp(test_data)
 y_true, y_pred = [tc[0] for tc in pd.DataFrame(preds.iloc[:, -2]).to_numpy()], [pc[0] for pc in pd.DataFrame(preds.iloc[:, -1]).to_numpy()]
 dd.visualize_cr_cm(y_true, y_pred, FOLDER, f'seqcov_')

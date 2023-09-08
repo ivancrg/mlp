@@ -1,26 +1,19 @@
 # Data visualization
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import display_data as dd
 
 import tensorflow as tf
 
-# Keras
-from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from keras.optimizers import SGD, Adam, Adadelta, RMSprop
-import keras.backend as K
 from keras.utils import to_categorical
 
 # Train-Test
 from sklearn.model_selection import train_test_split, StratifiedKFold
 
-# Classification Report
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
+# For SHAP
+tf.compat.v1.disable_v2_behavior()
+# tf.compat.v1.enable_eager_execution()
 
 plt.rcParams.update({'font.size': 14})
 
@@ -33,44 +26,49 @@ class MLP():
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
             self.X.values, y_cat, stratify=y_cat, test_size=0.2, random_state=42, shuffle=True)
+        
+        self.trained_model = None
+
+    def __call__(self, X):
+        return self.predict(X)
 
     def get_optimizer(self, optimizer_text, learning_rate):
         if optimizer_text == 'RMSprop':
-            optimizer = tf.optimizers.RMSprop(learning_rate=learning_rate)
+            optimizer = tf.keras.optimizers.legacy.RMSprop(learning_rate=learning_rate)
         elif optimizer_text == 'SGD':
-            optimizer = tf.optimizers.SGD(learning_rate=learning_rate)
+            optimizer = tf.keras.optimizers.legacy.SGD(learning_rate=learning_rate)
         elif optimizer_text == 'AdamW':
-            optimizer = tf.optimizers.AdamW(learning_rate=learning_rate)
+            optimizer = tf.keras.optimizers.legacy.AdamW(learning_rate=learning_rate)
         elif optimizer_text == 'Adadelta':
-            optimizer = tf.optimizers.Adadelta(learning_rate=learning_rate)
+            optimizer = tf.keras.optimizers.legacy.Adadelta(learning_rate=learning_rate)
         elif optimizer_text == 'Adagrad':
-            optimizer = tf.optimizers.Adagrad(learning_rate=learning_rate)
+            optimizer = tf.keras.optimizers.legacy.Adagrad(learning_rate=learning_rate)
         elif optimizer_text == 'Adamax':
-            optimizer = tf.optimizers.Adamax(learning_rate=learning_rate)
+            optimizer = tf.keras.optimizers.legacy.Adamax(learning_rate=learning_rate)
         elif optimizer_text == 'Adafactor':
-            optimizer = tf.optimizers.Adafactor(learning_rate=learning_rate)
+            optimizer = tf.keras.optimizers.legacy.Adafactor(learning_rate=learning_rate)
         elif optimizer_text == 'Nadam':
-            optimizer = tf.optimizers.Nadam(learning_rate=learning_rate)
+            optimizer = tf.keras.optimizers.legacy.Nadam(learning_rate=learning_rate)
         elif optimizer_text == 'Ftrl':
-            optimizer = tf.optimizers.Ftrl(learning_rate=learning_rate)
+            optimizer = tf.keras.optimizers.legacy.Ftrl(learning_rate=learning_rate)
         else:
-            optimizer = tf.optimizers.Adam(learning_rate=learning_rate)
+            optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=learning_rate)
 
         return optimizer
 
     def create_model(self, input_features, outputs, input_layer, hidden_layers, dropout, binary=False):
-        model = Sequential()
-        model.add(Dense(input_layer, input_shape=(
+        model = tf.keras.models.Sequential()
+        model.add(tf.keras.layers.Dense(input_layer, input_shape=(
             input_features,), activation="relu"))
 
         for neurons in hidden_layers:
-            model.add(Dense(neurons, activation="relu"))
-            model.add(Dropout(dropout))
+            model.add(tf.keras.layers.Dense(neurons, activation="relu"))
+            model.add(tf.keras.layers.Dropout(dropout))
 
-        model.add(Dense(outputs, activation="softmax"))
+        model.add(tf.keras.layers.Dense(outputs, activation="softmax"))
 
         if binary:
-            model.add(Dense(1, activation="softmax"))
+            model.add(tf.keras.layers.Dense(1, activation="softmax"))
 
         return model
 
@@ -130,7 +128,7 @@ class MLP():
 
             model = self.create_model(
                 input_features, outputs, input_layer, hidden_layers, dropout, binary=(loss=='binary_crossentropy'))
-            model.summary()
+            # model.summary()
 
             model.compile(
                 loss=loss,
@@ -236,6 +234,8 @@ class MLP():
             verbose=1
         )
 
+        self.trained_model = model
+
         if save_folder is not None:
             name = f'{input_layer}_{hidden_layers}_{dropout}_{optimizer_text}_{loss}_{learning_rate}'
             model.save(f'{save_folder}/nn_save_{name}')
@@ -244,3 +244,14 @@ class MLP():
             if test is True:
                 y_pred = model.predict(self.X_test)
                 dd.visualize_cr_cm(np.argmax(self.y_test, axis=1), np.argmax(y_pred, axis=1), save_folder, f'nn_{name}_')
+
+    def predict(self, X, np_classes=True):
+        if self.trained_model is None:
+            print("mlp_keras.py::predict::No trained model!")
+
+        y_pred = self.trained_model.predict(X)
+
+        if np_classes:
+            return np.argmax(y_pred, axis=1)
+        
+        return y_pred

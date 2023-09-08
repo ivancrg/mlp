@@ -3,11 +3,16 @@ from mlp_keras import MLP
 import tensorflow as tf
 import pandas as pd
 
-folder = './report/OS_NN/postop_binary'
+folder = './report/NO_OS/postop_binary'
 file = '/data_norm.csv'
 
-# losses = ['binary_crossentropy']
-losses = ['binary_crossentropy', 'categorical_crossentropy'] # sparse_categorical_crossentropy categorical_crossentropy
+BINARY = True
+
+losses = None
+if BINARY:
+    losses = ['binary_crossentropy', 'categorical_crossentropy']
+else:
+    losses = ['sparse_categorical_crossentropy', 'categorical_crossentropy'] # sparse_categorical_crossentropy categorical_crossentropy
 optimizers = ['Adam',
               'SGD',
               'AdamW',
@@ -16,6 +21,12 @@ optimizers = ['Adam',
               ]
 learning_rates = [10 ** (-i) for i in range(1, 6)]
 dropouts = np.linspace(0.05, 0.2, 4)
+
+print(folder)
+print(losses)
+print(optimizers)
+print(learning_rates)
+print(dropouts)
 
 mlp = MLP(folder + file)
 log = pd.DataFrame()
@@ -29,8 +40,10 @@ for loss in losses:
     for optimizer in optimizers:
         for learning_rate in learning_rates:
             for dropout in dropouts:
+                x = 3
+                if BINARY: x = 2
                 average_val_loss, average_val_accuracy, train_accuracies, train_losses, val_losses, val_accuracies, names = mlp.cv(
-                    9, 2, optimizer, learning_rate, [early_stopping_callback, rlr_callback], dropout=dropout, visualization_save_folder=None, oversampling=True, loss=loss)
+                    9, x, optimizer, learning_rate, [early_stopping_callback, rlr_callback], dropout=dropout, visualization_save_folder=None, oversampling=True, loss=loss)
                 
                 if average_val_accuracy > best[0]:
                     best = average_val_accuracy, average_val_loss, names
