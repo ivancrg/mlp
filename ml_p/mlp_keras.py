@@ -71,7 +71,7 @@ class MLP():
 
         return optimizer
 
-    def create_model(self, input_features, outputs, input_layer, hidden_layers, dropout, binary=False):
+    def create_model(self, input_features, output_classes, input_layer, hidden_layers, dropout, binary=False):
         model = Sequential()
         model.add(Dense(input_layer, input_shape=(
             input_features,), activation="relu"))
@@ -80,7 +80,7 @@ class MLP():
             model.add(Dense(neurons, activation="relu"))
             model.add(Dropout(dropout))
 
-        model.add(Dense(outputs, activation="softmax"))
+        model.add(Dense(output_classes, activation="softmax"))
 
         if binary:
             model.add(Dense(1, activation="softmax"))
@@ -254,7 +254,7 @@ class MLP():
         if save_folder is not None:
             name = f'{input_layer}_{hidden_layers}_{dropout}_{optimizer_text}_{loss}_{learning_rate}'
             model.save(f'{save_folder}/nn_save_{name}')
-            self.plot_histories(history, f'{save_folder}/{name}_histories.png')
+            self.plot_histories(history, f'{save_folder}/nn_histories{name}.png')
 
             if test is True:
                 y_pred = model.predict(self.X_test)
