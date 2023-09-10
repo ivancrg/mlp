@@ -8,12 +8,24 @@ from sklearn.base import BaseEstimator, ClassifierMixin
 
 class SequentialCovering(BaseEstimator, ClassifierMixin):
 
-    def __init__(self, data, multiclass=False, max_depth=3, min_samples_leaf=1, output_name='Postoperative diagnosis'):
+    def __init__(
+            self,
+            data,
+            multiclass=False,
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            max_features=None,
+            max_leaf_nodes=None,
+            output_name='Postoperative diagnosis'):
         self.data_orig = data
         self.data_orig.reset_index(drop=True, inplace=True)
         self.multiclass = multiclass
         self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
+        self.max_features = max_features
+        self.max_leaf_nodes = max_leaf_nodes
         self.output_name = output_name
         self.result = None
 
@@ -52,8 +64,15 @@ class SequentialCovering(BaseEstimator, ClassifierMixin):
         while len(data) > 0:
             data.reset_index(drop=True, inplace=True)
 
-            lor = LearnOneRule(data.copy(), max_depth=self.max_depth,
-                               min_samples_leaf=self.min_samples_leaf, output_name=self.output_name, class_names=class_names)
+            lor = LearnOneRule(
+                data.copy(),
+                max_depth=self.max_depth,
+                min_samples_split=self.min_samples_split,
+                min_samples_leaf=self.min_samples_leaf,
+                max_features=self.max_features,
+                max_leaf_nodes=self.max_leaf_nodes,
+                output_name=self.output_name,
+                class_names=class_names)
             _, new_rule, pred, n_covered = lor.learn_one_rule(
                 0, None, None, None, [])
             # lor.plot_classifier()

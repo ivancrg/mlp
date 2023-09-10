@@ -5,16 +5,6 @@ from sklearn.metrics import accuracy_score
 import numpy as np
 import display_data as dd
 
-# data = {
-#     'location': ['good', 'good', 'good', 'bad', 'good', 'good', 'bad', 'bad', 'bad', 'bad'],
-#     'size': ['small', 'big', 'big', 'medium', 'medium', 'small', 'medium', 'small', 'medium', 'small'],
-#     'pets': ['yes', 'no', 'no', 'no', 'only cats', 'only cats', 'yes', 'yes', 'yes', 'no'],
-#     'value': ['high', 'high', 'high', 'medium', 'medium', 'medium', 'medium', 'low', 'low', 'low']
-# }
-
-# # Create a DataFrame
-# data = pd.DataFrame(data)
-
 FOLDER = './report/NO_OS/histology_binary'
 FILE = '/data_categorical.csv'
 K = 5

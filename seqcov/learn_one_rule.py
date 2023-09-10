@@ -5,10 +5,22 @@ import numpy as np
 
 
 class LearnOneRule:
-    def __init__(self, data, max_depth, min_samples_leaf, output_name='Postoperative diagnosis', class_names=['0', '1']):
+    def __init__(
+            self,
+            data,
+            max_depth=None,
+            min_samples_split=2,
+            min_samples_leaf=1,
+            max_features=None,
+            max_leaf_nodes=None,
+            output_name='Postoperative diagnosis',
+            class_names=['0', '1']):
         self.data = data
         self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
+        self.max_features = max_features
+        self.max_leaf_nodes = max_leaf_nodes
         self.output_name = output_name
 
         X, y = self.data.iloc[:, :-1], pd.DataFrame(self.data.iloc[:, -1])
@@ -17,7 +29,12 @@ class LearnOneRule:
         self.class_names = class_names
 
         self.clf = tree.DecisionTreeClassifier(
-            max_depth=self.max_depth, min_samples_leaf=self.min_samples_leaf, random_state=47)
+            max_depth=self.max_depth,
+            min_samples_split=self.min_samples_split,
+            min_samples_leaf=self.min_samples_leaf,
+            max_features=self.max_features,
+            max_leaf_nodes=self.max_leaf_nodes,
+            random_state=42)
         self.clf = self.clf.fit(X.to_numpy(), y.to_numpy())
 
         # print(self.data[self.output_name].value_counts())

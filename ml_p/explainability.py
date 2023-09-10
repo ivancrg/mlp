@@ -13,12 +13,38 @@ import shap
 NN_MODEL_NAME = '/nn_save_512_[512, 256, 128]_0.24_SGD_categorical_crossentropy_0.1'
 SAVE = True
 
-FOLDER = './report/OS_NN/postop_binary'
+IS_MODEL_NN = False
+PREDICTION_INTERES = '/postop'
+
+BASE_FOLDER = './report/OS_NN' if IS_MODEL_NN else './report/NO_OS'
+FOLDER = BASE_FOLDER + PREDICTION_INTERES
 FILE = '/data.csv'
 FILE_NORM = '/data_norm.csv'
+RF_BEST_MODEL_FILE = '/rf_gs_best_params.txt'
 
-IS_MODEL_NN = True
+def parse_rf_params():
+    params = {}
+    with open(FOLDER + RF_BEST_MODEL_FILE, 'r') as file:
+        for line in file:
+            key, value = line.strip().split(': ')
+            if key == 'class_weight' or key == 'max_samples' or key == 'n_jobs':
+                continue
+            # Convert values to appropriate data types (e.g., bool, int)
+            if value == 'True':
+                value = True
+            elif value == 'False':
+                value = False
+            elif value.isdigit():
+                value = int(value)
+            else:
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass  # Leave it as a string if not bool, int, or float
+            params[key] = value
 
+    print(params)
+    return params
 
 def finalize_method(exp_method, show=False, postfix='', fig=None):
     if show:
@@ -37,11 +63,11 @@ def save(exp_method, postfix, fig=None):
             fig.savefig(
                 FOLDER + f'/nn_expl_{exp_method}_{NN_MODEL_NAME[1:]}{postfix}.png')
     else:
-        print("Saving " + FOLDER + f'/rf_expl_{exp_method}{postfix}.png')
+        print("Saving " + FOLDER + f'/rf_gs_expl_{exp_method}{postfix}.png')
         if fig is None:
-            plt.savefig(FOLDER + f'/rf_expl_{exp_method}{postfix}.png')
+            plt.savefig(FOLDER + f'/rf_gs_expl_{exp_method}{postfix}.png')
         else:
-            fig.savefig(FOLDER + f'/rf_expl_{exp_method}{postfix}.png')
+            fig.savefig(FOLDER + f'/rf_gs_expl_{exp_method}{postfix}.png')
 
 # Load data
 data = pd.read_csv(FOLDER + FILE)
@@ -65,7 +91,8 @@ X_test_norm, y_test_norm = test_data_norm.iloc[:,
 model = None
 if IS_MODEL_NN is False:
     # RF
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    best_params = parse_rf_params()
+    model = RandomForestClassifier(**best_params)
     model.fit(X_train, y_train)
 else:
     # NN
