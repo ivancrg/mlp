@@ -13,10 +13,11 @@ import shap
 NN_MODEL_NAME = '/nn_save_512_[512, 256, 128]_0.24_SGD_categorical_crossentropy_0.1'
 SAVE = True
 
-IS_MODEL_NN = False
-PREDICTION_INTERES = '/postop'
+IS_MODEL_NN = True
+OVERSAMPLED_VERSION = False
+PREDICTION_INTERES = '/histology'
 
-BASE_FOLDER = './report/OS_NN' if IS_MODEL_NN else './report/NO_OS'
+BASE_FOLDER = './report/OS_NN' if OVERSAMPLED_VERSION else './report/NO_OS'
 FOLDER = BASE_FOLDER + PREDICTION_INTERES
 FILE = '/data.csv'
 FILE_NORM = '/data_norm.csv'

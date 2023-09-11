@@ -9,7 +9,7 @@ import display_data as dd
 
 plt.rcParams.update({'font.size': 14})
 
-folder = './report/NO_OS/postop'
+folder = './report/NO_OS/postop_binary'
 file = '/data.csv'
 
 data = pd.read_csv(folder + file)

@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 import numpy as np
 import display_data as dd
 
-FOLDER = './report/NO_OS/histology_binary'
+FOLDER = './report/NO_OS/postop_binary'
 MULTICLASS = False
 FILE = '/data.csv'
 K = 5
